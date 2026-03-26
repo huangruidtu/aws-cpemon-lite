@@ -1,80 +1,71 @@
 # Architecture Overview
 
 ## Overview
+
 AWS CPEmon Lite is a lightweight AWS-native telemetry monitoring MVP inspired by a cloud-based CPE monitoring scenario.
 
 The goal of this project is to simulate a simple but realistic telemetry path from devices into AWS while keeping the design minimal, cost-aware, and easy to explain in interviews. The architecture favors managed AWS services to reduce operational overhead and avoid unnecessary platform complexity.
 
-## Architecture goals
-The MVP is designed around the following principles:
+## Architecture Diagram
 
-- managed-first design
-- minimal operational overhead
-- cost-aware architecture
-- production-minded but lightweight
-- simple service boundaries
-- easy to explain and evolve
+![Architecture Diagram](./images/aws-cpemon-lite-architecture.png)
 
-## High-level architecture
-The core telemetry path is:
+## Architecture Description
 
-**Simulator → API Gateway → Lambda**
+The architecture is centered around a lightweight AWS-native telemetry pipeline.
 
-Lambda then performs the following responsibilities:
+A simulator sends telemetry payloads to API Gateway over HTTPS. API Gateway forwards requests to an ingest Lambda, which acts as the main entry point for telemetry processing. From there, the flow is logically split into multiple downstream responsibilities to keep the design easier to understand:
 
-- validate telemetry payloads
-- write processing logs to CloudWatch Logs
-- publish custom metrics to CloudWatch Metrics
-- store raw telemetry in S3
-- update latest device state in DynamoDB
+* Archive Lambda stores raw telemetry in S3
+* State Update Lambda updates the latest device state in DynamoDB
+* Metrics Lambda publishes custom telemetry and health metrics to CloudWatch Metrics
+* The ingest path also writes processing logs to CloudWatch Logs
 
-The detection and notification path is:
+CloudWatch Metrics feeds both CloudWatch Dashboard and CloudWatch Alarms. The dashboard provides a lightweight operational view of telemetry volume, Lambda health, and device-related signals. CloudWatch Alarms trigger SNS notifications when abnormal conditions are detected.
 
-**CloudWatch Metrics → CloudWatch Alarms → SNS**
+In addition to the core telemetry path, the platform also includes supporting platform capabilities such as IAM, Systems Manager Parameter Store, CloudTrail, Cost Explorer, and AWS Budgets. These components are not part of the direct telemetry path, but they support access control, configuration handling, auditability, and cost visibility.
 
-Supporting operational and governance capabilities include:
+The architecture is intentionally minimal and interview-friendly. It demonstrates ingestion, event-driven processing, storage split by access pattern, observability, alerting, lightweight security thinking, and cost-aware cloud design without expanding into a full production-scale platform.
 
-- IAM for least-privilege access control
-- CloudWatch Dashboard for operational visibility
-- Parameter Store for externalized secrets/configuration
-- CloudTrail for auditability awareness
-- Cost Explorer and AWS Budgets for lightweight cost visibility
+## Core Telemetry Flow
 
-## Core AWS services
-The MVP uses the following AWS managed services:
+The main telemetry path is:
 
-- API Gateway
-- Lambda
-- S3
-- DynamoDB
-- CloudWatch Logs
-- CloudWatch Metrics
-- CloudWatch Alarms
-- CloudWatch Dashboard
-- SNS
-- IAM
-- Systems Manager Parameter Store
-- CloudTrail
-- Cost Explorer
-- AWS Budgets
+**Simulator → API Gateway → Ingest Lambda**
 
-## Why this architecture
-This architecture intentionally stays small and focused. It is not meant to reproduce a full production-scale monitoring platform. Instead, it demonstrates the most important platform engineering ideas in a simple and interview-ready form:
+The processing path then continues as:
 
-- telemetry ingestion
-- event-driven processing
-- storage split by access pattern
-- observability
-- alerting
-- lightweight security controls
-- cost awareness
+* **Ingest Lambda → Archive Lambda → S3 Raw Telemetry Archive**
+* **Ingest Lambda → State Update Lambda → DynamoDB Latest Device State**
+* **Ingest Lambda → Metrics Lambda → CloudWatch Metrics**
+* **Ingest Lambda → CloudWatch Logs**
 
-## Future evolution
-If the platform needed to scale further, the next possible evolution areas could include:
+The observability and alerting path is:
 
-- SQS for asynchronous buffering
-- Timestream for longer-term time-series querying
-- WAF for stronger public endpoint protection
-- Cognito for user authentication if a portal is added
-- ECS or EKS if the processing layer outgrows Lambda
-- Glue and Athena for historical analytics over archived telemetry
+**CloudWatch Metrics → CloudWatch Dashboard**
+**CloudWatch Metrics → CloudWatch Alarms → SNS Notifications**
+
+## Supporting Platform Capabilities
+
+The architecture also includes a lightweight set of supporting platform capabilities:
+
+* IAM least-privilege access control
+* Systems Manager Parameter Store
+* CloudTrail auditability
+* Cost Explorer
+* AWS Budgets
+
+These are intentionally shown as supporting capabilities rather than part of the main telemetry flow, in order to keep the architecture clear and easy to explain.
+
+## Why the Architecture Is Split This Way
+
+The diagram separates the platform into two layers:
+
+1. **Core Telemetry Flow**
+   This contains the direct business path for ingestion, processing, storage, observability, and alerting.
+
+2. **Supporting Platform Capabilities**
+   This contains cross-cutting concerns such as security, auditability, configuration handling, and cost visibility.
+
+This separation makes the architecture much easier to understand than mixing all capabilities into a single dense diagram.
+
