@@ -87,68 +87,79 @@ def publish_metrics(payload: dict, health_state: str) -> None:
     health_warning = 1 if health_state == "warning" else 0
     health_critical = 1 if health_state == "critical" else 0
 
-    cloudwatch_client.put_metric_data(
-        Namespace=CW_METRIC_NAMESPACE,
-        MetricData=[
+    metric_data = [
+        {
+            "MetricName": "DeviceTelemetryReceived",
+            "Dimensions": [
+                {"Name": "device_id", "Value": device_id}
+            ],
+            "Value": 1,
+            "Unit": "Count"
+        },
+        {
+            "MetricName": "WanDown",
+            "Dimensions": [
+                {"Name": "device_id", "Value": device_id}
+            ],
+            "Value": wan_down,
+            "Unit": "Count"
+        },
+        {
+            "MetricName": "CpuUsage",
+            "Dimensions": [
+                {"Name": "device_id", "Value": device_id}
+            ],
+            "Value": payload["cpu_usage"],
+            "Unit": "Percent"
+        },
+        {
+            "MetricName": "MemoryUsage",
+            "Dimensions": [
+                {"Name": "device_id", "Value": device_id}
+            ],
+            "Value": payload["memory_usage"],
+            "Unit": "Percent"
+        },
+        {
+            "MetricName": "Temperature",
+            "Dimensions": [
+                {"Name": "device_id", "Value": device_id}
+            ],
+            "Value": payload["temperature"],
+            "Unit": "None"
+        },
+        {
+            "MetricName": "HealthWarning",
+            "Dimensions": [
+                {"Name": "device_id", "Value": device_id}
+            ],
+            "Value": health_warning,
+            "Unit": "Count"
+        },
+        {
+            "MetricName": "HealthCritical",
+            "Dimensions": [
+                {"Name": "device_id", "Value": device_id}
+            ],
+            "Value": health_critical,
+            "Unit": "Count"
+        }
+    ]
+
+    # Fleet-level aggregate metric without device_id
+    if wan_down == 1:
+        metric_data.append(
             {
-                "MetricName": "DeviceTelemetryReceived",
-                "Dimensions": [
-                    {"Name": "device_id", "Value": device_id}
-                ],
+                "MetricName": "FleetWanDownCount",
                 "Value": 1,
                 "Unit": "Count"
-            },
-            {
-                "MetricName": "WanDown",
-                "Dimensions": [
-                    {"Name": "device_id", "Value": device_id}
-                ],
-                "Value": wan_down,
-                "Unit": "Count"
-            },
-            {
-                "MetricName": "CpuUsage",
-                "Dimensions": [
-                    {"Name": "device_id", "Value": device_id}
-                ],
-                "Value": payload["cpu_usage"],
-                "Unit": "Percent"
-            },
-            {
-                "MetricName": "MemoryUsage",
-                "Dimensions": [
-                    {"Name": "device_id", "Value": device_id}
-                ],
-                "Value": payload["memory_usage"],
-                "Unit": "Percent"
-            },
-            {
-                "MetricName": "Temperature",
-                "Dimensions": [
-                    {"Name": "device_id", "Value": device_id}
-                ],
-                "Value": payload["temperature"],
-                "Unit": "None"
-            },
-            {
-                "MetricName": "HealthWarning",
-                "Dimensions": [
-                    {"Name": "device_id", "Value": device_id}
-                ],
-                "Value": health_warning,
-                "Unit": "Count"
-            },
-            {
-                "MetricName": "HealthCritical",
-                "Dimensions": [
-                    {"Name": "device_id", "Value": device_id}
-                ],
-                "Value": health_critical,
-                "Unit": "Count"
             }
-        ]
-    )
+        )
 
+    cloudwatch_client.put_metric_data(
+        Namespace=CW_METRIC_NAMESPACE,
+        MetricData=metric_data
+    )
 
 def write_to_dynamodb(payload: dict, health_state: str) -> None:
     ingested_at = datetime.now(timezone.utc).isoformat()

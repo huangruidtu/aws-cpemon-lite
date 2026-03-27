@@ -151,6 +151,41 @@ Current custom metrics include:
 * `HealthWarning`
 * `HealthCritical`
 
+## Alerting and notification flow
+
+The monitoring flow now supports both a validation-only per-device alarm and a primary fleet-level aggregate alarm.
+
+### Validation-only sample alarm
+A per-device alarm is retained for technical path validation:
+
+- **Alarm**: `aws-cpemon-lite-wan-down-sample-alarm`
+- **Metric**: `WanDown`
+- **Dimension**: `device_id`
+
+This alarm is used only to validate the path from Lambda-published metrics to CloudWatch alarm evaluation and SNS email delivery.
+
+### Primary fleet-level alarm
+The main WAN-down alerting signal is fleet-level:
+
+- **Alarm**: `aws-cpemon-lite-fleet-wan-down-alarm`
+- **Metric**: `FleetWanDownCount`
+
+This aggregate metric is published without `device_id`, allowing multiple WAN-down events to contribute to one shared time series. This better reflects broadband service-availability monitoring, where broad impact matters more than isolated single-device failures.
+
+### Notification target
+Both alarms publish to:
+
+- **SNS topic**: `aws-cpemon-lite-alerts`
+
+with a confirmed email subscription for alert delivery.
+
+### Monitoring intent
+This project prioritizes **service availability monitoring** over pure device liveness.  
+That means:
+
+- fleet-level WAN-down aggregation is the primary alerting signal
+- DynamoDB-backed telemetry remains the main path for per-device drill-down and operational investigation
+
 ## Security baseline
 
 The MVP includes a lightweight but explicit security baseline:
