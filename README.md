@@ -39,7 +39,7 @@ After receiving telemetry, Lambda performs the following actions:
 * writes processing logs to CloudWatch Logs
 * publishes custom metrics to CloudWatch Metrics
 * stores raw telemetry in S3
-* updates the latest device state in DynamoDB
+* stores structured telemetry records in DynamoDB for recent history and operational lookup
 
 The detection and notification path is:
 
@@ -61,7 +61,7 @@ The MVP scope includes:
 * managed cloud ingestion endpoint
 * event-driven backend processing
 * raw telemetry archival
-* latest device state storage
+* structured telemetry storage for recent history and operational lookup
 * basic observability and alerting
 * lightweight security baseline
 * lightweight cost visibility
@@ -93,7 +93,7 @@ The service selection is intentionally simple.
 * **API Gateway** provides a managed HTTPS ingestion endpoint
 * **Lambda** provides lightweight event-driven processing
 * **S3** stores raw telemetry cheaply and durably
-* **DynamoDB** stores the latest device state for fast lookup
+* **DynamoDB** stores structured telemetry records for fast operational lookup and recent history queries
 * **CloudWatch** provides native logs, metrics, alarms, and dashboard visibility
 * **SNS** provides simple alert delivery
 * **IAM** provides least-privilege access control
@@ -108,31 +108,48 @@ The goal is to stay focused on a minimal but realistic AWS-native monitoring arc
 A simulated device sends telemetry payloads to API Gateway. Lambda processes the payload and then:
 
 1. validates the data
-2. writes processing logs
-3. publishes custom metrics
+2. derives a lightweight health state
+3. publishes custom metrics to CloudWatch Metrics
 4. archives raw telemetry in S3
-5. updates the latest device state in DynamoDB
+5. stores structured telemetry records in DynamoDB
+
+The telemetry handling model is intentionally divided into three paths:
+
+* **Hot path**: Lambda validates incoming payloads, derives a lightweight health state, and publishes CloudWatch custom metrics.
+* **Warm path**: DynamoDB stores structured telemetry records for operational lookup and recent history queries.
+* **Cold path**: S3 archives raw payloads for traceability, debugging, and future replay possibilities.
+
+This MVP focuses primarily on **household broadband service availability**, not only on whether the device is powered on.
+
+Because of that:
+
+* `wan_status` is treated as a primary service-availability signal
+* `last_seen` is treated as a supporting device-liveness signal
+* `cpu_usage`, `memory_usage`, and `temperature` are treated as supporting health indicators
 
 Example telemetry payload:
 
 ```json
 {
   "device_id": "cpe-001",
-  "timestamp": "2026-03-26T10:00:00Z",
+  "last_seen": "2026-03-26T10:00:00Z",
   "cpu_usage": 82,
   "memory_usage": 68,
   "temperature": 71,
   "wan_status": "up",
-  "packet_loss": 0.5
+  "health_state": "warning"
 }
 ```
 
-Example custom metrics:
+Current custom metrics include:
 
-* `TelemetryReceivedCount`
-* `HighCpuDeviceCount`
-* `WanDownDeviceCount`
-* `HighTemperatureDeviceCount`
+* `DeviceTelemetryReceived`
+* `WanDown`
+* `CpuUsage`
+* `MemoryUsage`
+* `Temperature`
+* `HealthWarning`
+* `HealthCritical`
 
 ## Security baseline
 
