@@ -1,60 +1,142 @@
 import json
-import os
-import random
-import time
 from datetime import datetime, timezone
 
-import requests
-from dotenv import load_dotenv
+
+REQUIRED_FIELDS = [
+    "device_id",
+    "timestamp",
+    "cpu_usage",
+    "memory_usage",
+    "connection_status",
+    "firmware_version",
+    "temperature",
+]
+
+ALLOWED_CONNECTION_STATUS = {"online", "degraded", "offline"}
 
 
-load_dotenv()
-
-
-def get_env(name: str, default: str | None = None) -> str:
-    value = os.getenv(name, default)
-    if value is None:
-        raise ValueError(f"Missing required environment variable: {name}")
-    return value
-
-
-INGESTION_URL = get_env("INGESTION_URL")
-DEVICE_ID = get_env("DEVICE_ID", "cpe-001")
-SEND_INTERVAL = int(get_env("SEND_INTERVAL", "10"))
-
-
-def generate_payload(device_id: str) -> dict:
+def build_response(status_code: int, body: dict) -> dict:
     return {
-        "device_id": device_id,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "cpu_usage": round(random.uniform(5.0, 85.0), 2),
-        "memory_usage": round(random.uniform(10.0, 90.0), 2),
-        "connection_status": random.choice(["online", "degraded"]),
-        "firmware_version": "1.0.3",
-        "temperature": round(random.uniform(35.0, 65.0), 2),
+        "statusCode": status_code,
+        "body": json.dumps(body),
     }
 
 
-def send_payload(url: str, payload: dict) -> None:
+def parse_body(event: dict) -> dict:
+    body = event.get("body")
+
+    if body is None:
+        raise ValueError("Missing request body")
+
+    if isinstance(body, str):
+        return json.loads(body)
+
+    if isinstance(body, dict):
+        return body
+
+    raise ValueError("Unsupported request body format")
+
+
+def validate_payload(payload: dict) -> None:
+    for field in REQUIRED_FIELDS:
+        if field not in payload:
+            raise ValueError(f"Missing required field: {field}")
+
+    if not isinstance(payload["device_id"], str) or not payload["device_id"].strip():
+        raise ValueError("device_id must be a non-empty string")
+
+    if not isinstance(payload["timestamp"], str) or not payload["timestamp"].strip():
+        raise ValueError("timestamp must be a non-empty string")
+
+    if not isinstance(payload["firmware_version"], str) or not payload["firmware_version"].strip():
+        raise ValueError("firmware_version must be a non-empty string")
+
+    if payload["connection_status"] not in ALLOWED_CONNECTION_STATUS:
+        raise ValueError("connection_status must be one of: online, degraded, offline")
+
     try:
-        response = requests.post(url, json=payload, timeout=10)
-        print(f"[INFO] Sent payload: {json.dumps(payload)}")
-        print(f"[INFO] Response: {response.status_code} {response.text}")
-    except requests.RequestException as exc:
-        print(f"[ERROR] Failed to send payload: {exc}")
+        cpu_usage = float(payload["cpu_usage"])
+    except (TypeError, ValueError):
+        raise ValueError("cpu_usage must be a number")
+
+    try:
+        memory_usage = float(payload["memory_usage"])
+    except (TypeError, ValueError):
+        raise ValueError("memory_usage must be a number")
+
+    try:
+        temperature = float(payload["temperature"])
+    except (TypeError, ValueError):
+        raise ValueError("temperature must be a number")
+
+    if not 0 <= cpu_usage <= 100:
+        raise ValueError("cpu_usage must be between 0 and 100")
+
+    if not 0 <= memory_usage <= 100:
+        raise ValueError("memory_usage must be between 0 and 100")
+
+    if not -50 <= temperature <= 150:
+        raise ValueError("temperature must be between -50 and 150")
 
 
-def main() -> None:
-    print("[INFO] Starting device simulator...")
-    print(f"[INFO] Device ID: {DEVICE_ID}")
-    print(f"[INFO] Ingestion URL: {INGESTION_URL}")
-    print(f"[INFO] Send interval: {SEND_INTERVAL}s")
+def normalize_payload(payload: dict) -> dict:
+    return {
+        "device_id": payload["device_id"].strip(),
+        "event_timestamp": payload["timestamp"],
+        "ingested_at": datetime.now(timezone.utc).isoformat(),
+        "cpu_usage": float(payload["cpu_usage"]),
+        "memory_usage": float(payload["memory_usage"]),
+        "connection_status": payload["connection_status"],
+        "firmware_version": payload["firmware_version"].strip(),
+        "temperature": float(payload["temperature"]),
+    }
 
-    while True:
-        payload = generate_payload(DEVICE_ID)
-        send_payload(INGESTION_URL, payload)
-        time.sleep(SEND_INTERVAL)
 
+def lambda_handler(event, context):
+    try:
+        payload = parse_body(event)
+        print("Received raw payload:")
+        print(json.dumps(payload))
 
-if __name__ == "__main__":
-    main()
+        validate_payload(payload)
+
+        normalized_record = normalize_payload(payload)
+        print("Validated and normalized record:")
+        print(json.dumps(normalized_record))
+
+        return build_response(
+            200,
+            {
+                "message": "Telemetry processed successfully",
+                "record": normalized_record,
+            },
+        )
+
+    except ValueError as exc:
+        print(f"Validation error: {exc}")
+        return build_response(
+            400,
+            {
+                "message": "Invalid telemetry payload",
+                "error": str(exc),
+            },
+        )
+
+    except json.JSONDecodeError as exc:
+        print(f"JSON parsing error: {exc}")
+        return build_response(
+            400,
+            {
+                "message": "Request body is not valid JSON",
+                "error": str(exc),
+            },
+        )
+
+    except Exception as exc:
+        print(f"Unexpected error: {exc}")
+        return build_response(
+            500,
+            {
+                "message": "Internal server error",
+            },
+        )
