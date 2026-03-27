@@ -1,0 +1,29 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowWriteToTelemetryDynamoDB",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:PutItem"
+      ],
+      "Resource": "arn:aws:dynamodb:<region>:<account-id>:table/aws-cpemon-lite-telemetry"
+    },
+    {
+      "Sid": "AllowUploadRawPayloadToS3",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject"
+      ],
+      "Resource": "arn:aws:s3:::aws-cpemon-lite-raw-payloads-hr/raw/*"
+    },
+    {
+      "Sid": "AllowPublishCustomCloudWatchMetrics",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:PutMetricData"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
