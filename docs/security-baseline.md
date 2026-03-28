@@ -62,7 +62,7 @@ Any secret-like value or operational configuration should be externalized.
 - configurable thresholds
 
 ### AWS service
-Use Systems Manager Parameter Store for lightweight secret/config handling.
+Systems Manager Parameter Store is the natural next step for stronger externalized secret/config handling, but the current MVP keeps active runtime configuration intentionally lightweight.
 
 ### Why
 Sensitive values should not be hardcoded into application code or Git history.

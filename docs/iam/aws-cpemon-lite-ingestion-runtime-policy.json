@@ -7,7 +7,7 @@
       "Action": [
         "dynamodb:PutItem"
       ],
-      "Resource": "arn:aws:dynamodb:<region>:<account-id>:table/aws-cpemon-lite-telemetry"
+      "Resource": "arn:aws:dynamodb:*:*:table/aws-cpemon-lite-telemetry"
     },
     {
       "Sid": "AllowUploadRawPayloadToS3",
