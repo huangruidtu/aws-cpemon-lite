@@ -146,7 +146,6 @@ def publish_metrics(payload: dict, health_state: str) -> None:
         }
     ]
 
-    # Fleet-level aggregate metric without device_id
     if wan_down == 1:
         metric_data.append(
             {
@@ -160,6 +159,12 @@ def publish_metrics(payload: dict, health_state: str) -> None:
         Namespace=CW_METRIC_NAMESPACE,
         MetricData=metric_data
     )
+
+    print(
+        f"Published CloudWatch metrics for device_id={device_id}, "
+        f"health_state={health_state}, wan_status={payload['wan_status']}"
+    )
+
 
 def write_to_dynamodb(payload: dict, health_state: str) -> None:
     ingested_at = datetime.now(timezone.utc).isoformat()
@@ -177,6 +182,8 @@ def write_to_dynamodb(payload: dict, health_state: str) -> None:
 
     table.put_item(Item=item)
 
+    print(f"Stored telemetry record in DynamoDB for device_id={payload['device_id']}")
+
 
 def archive_raw_payload(payload: dict) -> None:
     device_id = payload["device_id"]
@@ -191,17 +198,34 @@ def archive_raw_payload(payload: dict) -> None:
         ContentType="application/json"
     )
 
+    print(f"Archived raw payload to S3 for device_id={device_id}, key={object_key}")
+
 
 def lambda_handler(event, context):
     try:
         payload = parse_event_body(event)
+        print(f"Received telemetry payload for device_id={payload.get('device_id', 'unknown')}")
+
         validate_payload(payload)
+        print(f"Payload validation passed for device_id={payload['device_id']}")
 
         health_state = derive_health_state(payload)
+        print(
+            f"Derived health_state={health_state} for device_id={payload['device_id']}, "
+            f"wan_status={payload['wan_status']}, "
+            f"cpu_usage={payload['cpu_usage']}, "
+            f"memory_usage={payload['memory_usage']}, "
+            f"temperature={payload['temperature']}"
+        )
 
         publish_metrics(payload, health_state)
         write_to_dynamodb(payload, health_state)
         archive_raw_payload(payload)
+
+        print(
+            f"Telemetry processing completed successfully for device_id={payload['device_id']} "
+            f"with health_state={health_state}"
+        )
 
         return build_response(
             200,

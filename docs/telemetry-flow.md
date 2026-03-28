@@ -48,9 +48,26 @@ The Lambda function is intentionally small and focused.
 
 It checks whether the payload contains the required fields and whether the values are in a reasonable format.
 
-### Logging
+## CloudWatch logging behavior
 
-It writes processing and failure information to CloudWatch Logs for troubleshooting and visibility.
+The Lambda function writes both default runtime logs and lightweight application-level logs to CloudWatch Logs.
+
+Default Lambda runtime logs include:
+- INIT_START
+- START RequestId
+- END RequestId
+- REPORT RequestId
+
+In addition, the function now emits application logs during successful processing so that the telemetry flow can be traced more clearly. These logs cover:
+- payload receipt
+- validation success
+- derived health state
+- CloudWatch metric publication
+- DynamoDB write completion
+- S3 archival completion
+- final successful processing outcome
+
+This approach keeps the logging model simple while making CloudWatch Logs the first troubleshooting layer for the MVP.
 
 ### Metrics
 

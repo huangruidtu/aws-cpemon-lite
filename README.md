@@ -151,6 +151,22 @@ Current custom metrics include:
 * `HealthWarning`
 * `HealthCritical`
 
+## Current observability status
+
+The Lambda runtime logging path is active through CloudWatch Logs, and lightweight application-level processing logs have been added to improve operational visibility.
+
+The ingestion function now logs key processing stages such as:
+
+- payload receipt
+- payload validation
+- health-state derivation
+- CloudWatch metric publication
+- DynamoDB persistence
+- S3 archival
+- final processing outcome
+
+This makes the telemetry ingestion path easier to validate, troubleshoot, and demonstrate during walkthroughs, while keeping the logging model intentionally lightweight.
+
 ## Alerting and notification flow
 
 The monitoring flow now supports both a validation-only per-device alarm and a primary fleet-level aggregate alarm.
