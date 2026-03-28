@@ -1,0 +1,179 @@
+{
+  "variables": [
+    {
+      "type": "property",
+      "property": "device_id",
+      "inputType": "input",
+      "id": "deviceId",
+      "label": "Device ID",
+      "defaultValue": "cpe-001",
+      "visible": true
+    }
+  ],
+  "widgets": [
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 0,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [ "AWS/CPEmonLite/Telemetry", "FleetWanDownCount" ]
+        ],
+        "region": "eu-north-1",
+        "title": "Fleet WAN-down count"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 6,
+      "y": 0,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [ "AWS/CPEmonLite/Telemetry", "FleetMissingHeartbeatCount" ]
+        ],
+        "region": "eu-north-1",
+        "title": "Fleet missing-heartbeat count"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 0,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [ "AWS/Lambda", "Invocations", "FunctionName", "aws-cpemon-lite-ingestion" ]
+        ],
+        "region": "eu-north-1",
+        "title": "Ingestion Lambda invocations"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 18,
+      "y": 0,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [ "AWS/Lambda", "Errors", "FunctionName", "aws-cpemon-lite-ingestion" ]
+        ],
+        "region": "eu-north-1",
+        "title": "Ingestion Lambda errors"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 6,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [ "AWS/Lambda", "Invocations", "FunctionName", "aws-cpemon-lite-heartbeat-check" ]
+        ],
+        "region": "eu-north-1",
+        "title": "Heartbeat-check Lambda invocations"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 6,
+      "y": 6,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [ "AWS/Lambda", "Errors", "FunctionName", "aws-cpemon-lite-heartbeat-check" ]
+        ],
+        "region": "eu-north-1",
+        "title": "Heartbeat-check Lambda errors"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 12,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "title": "Device WAN-down",
+        "view": "timeSeries",
+        "region": "eu-north-1",
+        "stat": "Average",
+        "period": 300,
+        "metrics": [
+          [ "AWS/CPEmonLite/Telemetry", "WanDown", "device_id", "${deviceId}" ]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 6,
+      "y": 12,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "title": "Device CPU usage",
+        "view": "timeSeries",
+        "region": "eu-north-1",
+        "stat": "Average",
+        "period": 300,
+        "metrics": [
+          [ "AWS/CPEmonLite/Telemetry", "CpuUsage", "device_id", "${deviceId}" ]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 12,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "title": "Device memory usage",
+        "view": "timeSeries",
+        "region": "eu-north-1",
+        "stat": "Average",
+        "period": 300,
+        "metrics": [
+          [ "AWS/CPEmonLite/Telemetry", "MemoryUsage", "device_id", "${deviceId}" ]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "x": 18,
+      "y": 12,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "title": "Device temperature",
+        "view": "timeSeries",
+        "region": "eu-north-1",
+        "stat": "Average",
+        "period": 300,
+        "metrics": [
+          [ "AWS/CPEmonLite/Telemetry", "Temperature", "device_id", "${deviceId}" ]
+        ]
+      }
+    }
+  ]
+}

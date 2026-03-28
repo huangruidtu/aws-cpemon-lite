@@ -43,6 +43,7 @@ Two storage backends are slightly more complex than one, but they reflect realis
 
 ## 4. Keep observability native and lightweight
 Observability is kept inside CloudWatch rather than introducing a larger external stack.
+The MVP keeps device-level investigation inside native CloudWatch dashboard views with a `deviceId` variable instead of building a separate custom lookup UI.
 
 ### Decision
 Use CloudWatch Logs, CloudWatch Metrics, CloudWatch Alarms, and CloudWatch Dashboard.

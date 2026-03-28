@@ -27,7 +27,7 @@ The ingestion Lambda performs the following responsibilities directly:
 
 In addition to the ingestion path, the architecture includes a scheduled heartbeat-check Lambda. This Lambda periodically scans the DynamoDB telemetry history table, derives the most recent `last_seen` value per device, counts stale devices, and publishes the fleet-level metric `FleetMissingHeartbeatCount`.
 
-CloudWatch Metrics feeds both CloudWatch Dashboard and CloudWatch Alarms. The dashboard provides a lightweight operational view of fleet-level signals and supporting device-level signals. CloudWatch Alarms trigger SNS notifications when abnormal conditions are detected.
+CloudWatch Metrics feeds both CloudWatch Dashboard and CloudWatch Alarms. The dashboard provides a lightweight operational view of fleet-level signals and supporting device-level signals. CloudWatch Alarms trigger SNS notifications when abnormal conditions are detected.The dashboard also supports lightweight per-device drill-down through a `deviceId` variable for supporting investigation views.
 
 In addition to the core telemetry path, the platform also includes supporting platform capabilities such as IAM, Systems Manager Parameter Store, CloudTrail, Cost Explorer, and AWS Budgets. These components are not part of the direct telemetry path, but they support access control, configuration handling, auditability, and cost visibility.
 

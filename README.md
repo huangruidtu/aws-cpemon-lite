@@ -160,7 +160,7 @@ Current custom metrics include:
 * `DeviceTelemetryReceived`
 * `WanDown`
 * `CpuUsage`
-* `MemoryUsage`
+* `M
 * `Temperature`
 * `HealthWarning`
 * `HealthCritical`
@@ -248,6 +248,7 @@ This helps reinforce that cloud architecture should not only work technically, b
 
 ```text
 docs/                     Documentation, architecture notes, IAM notes, security notes, cost visibility
+docs/cloudwatch-dashboard/aws-cpemon-lite-operations-dashboard.json The CloudWatch dashboard definition is also stored in the repository as a versioned configuration artifact.
 infra/src/lambda/         Lambda source code units
 simulator/                Python-based device simulator
 ```
