@@ -129,3 +129,39 @@ With this addition, the primary fleet-level monitoring model now covers both:
 
 - aggregate WAN-down conditions
 - aggregate missing-heartbeat or stale-telemetry conditions
+
+## Current alarm model after monitoring refinement
+
+The alerting model was later refined after the dashboard and missing-heartbeat monitoring path were added.
+
+### Removed validation-only sample alarm
+The per-device sample alarm was removed after the technical metric-to-alarm-to-SNS path had been validated.
+
+Removed alarm:
+- `aws-cpemon-lite-wan-down-sample-alarm`
+
+Reason:
+- it was only needed for technical path validation
+- it was not part of the intended primary operational monitoring model
+- the fleet-level monitoring model became the preferred steady-state design
+
+### Active primary fleet alarm
+The WAN-down fleet alarm remains active as the primary service-availability alarm.
+
+- Alarm: `aws-cpemon-lite-fleet-wan-down-alarm`
+- Metric: `FleetWanDownCount`
+- Status: active
+
+### Defined but disabled missing-heartbeat alarm
+A second fleet-level primary alarm was added for missing-heartbeat detection.
+
+- Alarm: `aws-cpemon-lite-fleet-missing-heartbeat-alarm`
+- Metric: `FleetMissingHeartbeatCount`
+
+Status:
+- created
+- alarm logic validated
+- alarm actions intentionally disabled in the current test environment
+
+Reason:
+The simulator is not intended to run continuously in the test environment, so leaving alarm actions enabled would generate noisy email notifications. The alarm definition is retained because it reflects the intended production-style monitoring model.

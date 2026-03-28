@@ -160,7 +160,7 @@ Current custom metrics include:
 * `DeviceTelemetryReceived`
 * `WanDown`
 * `CpuUsage`
-* `M
+* `MemoryUsage`
 * `Temperature`
 * `HealthWarning`
 * `HealthCritical`
@@ -183,18 +183,9 @@ This makes the telemetry ingestion path easier to validate, troubleshoot, and de
 
 ## Alerting and notification flow
 
-The monitoring flow now supports both a validation-only per-device alarm and a primary fleet-level aggregate alarm.
+The monitoring flow now uses a fleet-level primary alarm model.
 
-### Validation-only sample alarm
-A per-device alarm is retained for technical path validation:
-
-- **Alarm**: `aws-cpemon-lite-wan-down-sample-alarm`
-- **Metric**: `WanDown`
-- **Dimension**: `device_id`
-
-This alarm is used only to validate the path from Lambda-published metrics to CloudWatch alarm evaluation and SNS email delivery.
-
-### Primary fleet-level alarm
+### Active primary fleet WAN-down alarm
 The main WAN-down alerting signal is fleet-level:
 
 - **Alarm**: `aws-cpemon-lite-fleet-wan-down-alarm`
@@ -202,21 +193,34 @@ The main WAN-down alerting signal is fleet-level:
 
 This aggregate metric is published without `device_id`, allowing multiple WAN-down events to contribute to one shared time series. This better reflects broadband service-availability monitoring, where broad impact matters more than isolated single-device failures.
 
+### Defined but currently disabled missing-heartbeat alarm
+A second fleet-level alarm is defined for missing-heartbeat detection:
+
+- **Alarm**: `aws-cpemon-lite-fleet-missing-heartbeat-alarm`
+- **Metric**: `FleetMissingHeartbeatCount`
+
+This alarm represents the second primary operational signal for stale telemetry or missing heartbeat across the fleet.
+
+In the current test environment, the alarm definition is retained but alarm actions are disabled to avoid noisy notifications when the simulator is not running continuously.
+
 ### Notification target
-Both alarms publish to:
+The fleet-level alarms use:
 
 - **SNS topic**: `aws-cpemon-lite-alerts`
 
 with a confirmed email subscription for alert delivery.
 
 ### Monitoring intent
-This project prioritizes **service availability monitoring** over pure device liveness.  
+This project prioritizes **service availability monitoring** over pure device liveness.
+
 That means:
 
 - `FleetWanDownCount` is a primary service-availability signal
 - `FleetMissingHeartbeatCount` is a primary missing-heartbeat signal
 - DynamoDB-backed telemetry remains the main path for per-device drill-down and operational investigation
 - per-device metrics remain supporting signals rather than primary alerting signals
+
+The earlier validation-only per-device sample alarm was removed after the technical metric-to-alarm path had already been verified successfully.
 
 ## Security baseline
 
@@ -247,10 +251,10 @@ This helps reinforce that cloud architecture should not only work technically, b
 ## Project structure
 
 ```text
-docs/                     Documentation, architecture notes, IAM notes, security notes, cost visibility
-docs/cloudwatch-dashboard/aws-cpemon-lite-operations-dashboard.json The CloudWatch dashboard definition is also stored in the repository as a versioned configuration artifact.
-infra/src/lambda/         Lambda source code units
-simulator/                Python-based device simulator
+docs/                       Documentation, architecture notes, IAM notes, security notes, cost visibility
+docs/cloudwatch-dashboard/  CloudWatch dashboard definition and notes
+infra/src/lambda/           Lambda source code units
+simulator/                  Python-based device simulator
 ```
 
 ## Documentation
@@ -262,6 +266,8 @@ The repository includes lightweight documentation intended for both implementati
 * `docs/telemetry-flow.md`
 * `docs/security-baseline.md`
 * `docs/cost-visibility.md`
+* `docs/cloudwatch-dashboard/README.md`
+* `docs/cloudwatch-dashboard/aws-cpemon-lite-operations-dashboard.json`
 
 ## Design decisions
 

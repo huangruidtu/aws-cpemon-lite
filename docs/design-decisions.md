@@ -43,13 +43,13 @@ Two storage backends are slightly more complex than one, but they reflect realis
 
 ## 4. Keep observability native and lightweight
 Observability is kept inside CloudWatch rather than introducing a larger external stack.
-The MVP keeps device-level investigation inside native CloudWatch dashboard views with a `deviceId` variable instead of building a separate custom lookup UI.
 
 ### Decision
 Use CloudWatch Logs, CloudWatch Metrics, CloudWatch Alarms, and CloudWatch Dashboard.
 
 ### Reasoning
 This keeps the MVP simple, AWS-native, and operationally light while still covering the main observability layers.
+The MVP keeps device-level investigation inside native CloudWatch dashboard views with a `deviceId` variable instead of building a separate custom lookup UI.
 
 ### Trade-off
 The observability stack is less feature-rich than Prometheus/Grafana or ELK-based solutions, but it is a better fit for the current scope.
@@ -93,6 +93,8 @@ This approach is simple, practical, and easy to explain for a small-scale MVP. I
 This is an MVP trade-off rather than a large-scale target design. At larger scale, the architecture would likely evolve toward event-driven device presence or lifecycle handling instead of table polling.
 
 A separate heartbeat field is also intentionally not added in the MVP, because `last_seen` already serves that purpose.
+
+In the current test environment, the missing-heartbeat alarm is intentionally kept with alarm actions disabled because the simulator is not running continuously. The alarm definition is still retained to reflect the intended fleet-level production monitoring model.
 
 ## 8. Security should be explicit but low-cost
 The MVP includes practical security controls without turning the project into a full security platform.
