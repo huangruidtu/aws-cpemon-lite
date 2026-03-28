@@ -31,6 +31,8 @@ CloudWatch Metrics feeds both CloudWatch Dashboard and CloudWatch Alarms. The da
 
 In addition to the core telemetry path, the platform also includes supporting platform capabilities such as IAM, Systems Manager Parameter Store, CloudTrail, Cost Explorer, and AWS Budgets. These components are not part of the direct telemetry path, but they support access control, configuration handling, auditability, and cost visibility.
 
+For the current MVP, CloudTrail is used through the default Event history view to provide lightweight control-plane auditability awareness rather than a dedicated long-term audit trail.
+
 The architecture is intentionally minimal and interview-friendly. It demonstrates ingestion, event-driven processing, storage split by access pattern, observability, alerting, lightweight security thinking, and cost-aware cloud design without expanding into a full production-scale platform.
 
 ## Core Telemetry Flow

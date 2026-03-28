@@ -71,10 +71,19 @@ Sensitive values should not be hardcoded into application code or Git history.
 Control-plane actions should be auditable.
 
 ### AWS service
-Use CloudTrail for AWS API activity visibility.
+Use CloudTrail Event history for lightweight AWS API activity visibility in the current MVP.
+
+### Current scope
+The current MVP relies on the default CloudTrail Event history view, which is sufficient for lightweight auditability awareness of recent management events.
+
+This is used to review control-plane changes such as:
+- Lambda creation and updates
+- CloudWatch alarm creation, deletion, and alarm-action changes
+- dashboard updates
+- IAM-related configuration changes
 
 ### Why
-This improves operational governance and reinforces production-minded design.
+This improves operational governance and reinforces production-minded design without introducing a dedicated long-term audit trail at this stage.
 
 ## 7. Failure visibility as part of operational security
 Some security-relevant situations first appear as operational anomalies.

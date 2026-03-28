@@ -104,6 +104,8 @@ The service selection is intentionally simple.
 
 The goal is to stay focused on a minimal but realistic AWS-native monitoring architecture rather than building a larger enterprise platform in the first version.
 
+For CloudTrail, the current MVP relies on the default Event history view to provide lightweight control-plane auditability awareness. This is sufficient for the current scope, so a dedicated trail for long-term retention is not created at this stage.
+
 ## Telemetry flow
 
 A simulated device sends telemetry payloads to API Gateway. Lambda processes the payload and then:
