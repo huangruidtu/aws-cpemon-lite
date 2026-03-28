@@ -109,7 +109,9 @@ These controls add strong engineering value at relatively low implementation cos
 The design does not yet include WAF tuning, Cognito, mTLS, GuardDuty, Security Hub, or enterprise-grade compliance controls.
 
 ## 9. Cost awareness should be visible
-Cost-aware design is treated as an explicit part of the architecture rather than a hidden assumption.
+For the current MVP, service-level visibility in Cost Explorer and a small AWS Budget guardrail are sufficient.
+
+At larger scale, cost monitoring would likely expand toward tag-based or account-based breakdown, deeper usage-type analysis, and layered budgets for production, staging, development, or team ownership.
 
 ### Decision
 Use Cost Explorer for service-level cost visibility and AWS Budgets for simple monthly budget guardrails.

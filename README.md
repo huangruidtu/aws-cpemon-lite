@@ -250,6 +250,10 @@ Cost visibility is included as a supporting operational capability:
 
 This helps reinforce that cloud architecture should not only work technically, but should also remain aware of operational cost.
 
+The current MVP uses AWS Cost Explorer for lightweight service-level cost visibility and AWS Budgets for a simple budget guardrail.
+
+This is intentionally sufficient for the current project scale. A larger production-scale platform would typically require deeper cost breakdown by tag, linked account, region, or usage type, along with layered budgets for environments or teams.
+
 ## Project structure
 
 ```text
