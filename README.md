@@ -43,7 +43,7 @@ After receiving telemetry, Lambda performs the following actions:
 
 The detection, heartbeat-check, and notification path is:
 
-**DynamoDB telemetry history → Scheduled heartbeat-check Lambda → CloudWatch Metrics**
+**EventBridge schedule → Scheduled heartbeat-check Lambda → DynamoDB telemetry history scan → CloudWatch Metrics**
 **CloudWatch Metrics → CloudWatch Alarms → SNS**
 
 Supporting platform capabilities include:
@@ -118,7 +118,7 @@ A simulated device sends telemetry payloads to API Gateway. Lambda processes the
 
 In addition to the ingestion path, the MVP also includes a scheduled heartbeat-check path.
 
-A dedicated heartbeat-check Lambda periodically scans the DynamoDB telemetry history table, derives the latest `last_seen` value per device, counts stale devices, and publishes:
+A dedicated heartbeat-check Lambda is triggered by an EventBridge schedule every 10 minutes. It scans the DynamoDB telemetry history table, derives the latest `last_seen` value per device, counts stale devices, and publishes:
 
 - `FleetMissingHeartbeatCount`
 

@@ -84,7 +84,7 @@ This keeps the primary operational model simple and focused, but it does not yet
 ## 7. Implement missing-heartbeat detection by scheduled polling in the MVP
 
 ### Decision
-For the MVP, implement missing-heartbeat detection by using a scheduled Lambda that scans the DynamoDB telemetry history table and evaluates stale `last_seen` values.
+For the MVP, implement missing-heartbeat detection by using an EventBridge-scheduled Lambda that runs every 10 minutes, scans the DynamoDB telemetry history table, and evaluates stale `last_seen` values.
 
 ### Reasoning
 This approach is simple, practical, and easy to explain for a small-scale MVP. It avoids introducing a separate device-status table, a dedicated heartbeat field, or a more complex event-driven device-presence architecture in the first version.

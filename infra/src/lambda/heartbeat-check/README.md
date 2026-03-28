@@ -20,7 +20,7 @@ A device that stops sending telemetry does not trigger the ingestion path at all
 
 For the MVP, this is implemented with:
 
-- EventBridge schedule
+- an EventBridge schedule running every 10 minutes
 - heartbeat-check Lambda
 - DynamoDB telemetry history table
 - CloudWatch custom metric publication
@@ -30,6 +30,7 @@ For the MVP, this is implemented with:
 This Lambda does not require a request body.
 
 It reads from DynamoDB using the telemetry history table.
+The Lambda can be invoked manually with an empty JSON event (`{}`) for validation, but its normal operating path is automatic scheduled invocation from EventBridge.
 
 ## Environment variables
 

@@ -21,13 +21,13 @@ After receiving telemetry, the ingestion Lambda performs the following actions:
 5. Stores the raw telemetry payload in S3
 6. Stores structured telemetry records in DynamoDB
 
-In addition to the ingestion path, a scheduled heartbeat-check Lambda scans the DynamoDB telemetry history table, derives the latest `last_seen` value per device, counts stale devices, and publishes the fleet-level metric:
+In addition to the ingestion path, an EventBridge schedule triggers the heartbeat-check Lambda every 10 minutes. The Lambda scans the DynamoDB telemetry history table, derives the latest `last_seen` value per device, counts stale devices, and publishes the fleet-level metric:
 
 - `FleetMissingHeartbeatCount`
 
 The detection and notification path is:
 
-**CloudWatch Metrics → CloudWatch Alarms → SNS**
+**EventBridge schedule → heartbeat-check Lambda → CloudWatch Metrics → CloudWatch Alarms → SNS**
 
 ## Example telemetry payload
 
