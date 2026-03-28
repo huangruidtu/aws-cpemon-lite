@@ -114,3 +114,18 @@ Status:
 Status:
 - active
 - primary WAN-down service availability alarm
+
+---
+
+## Follow-up monitoring evolution
+
+After the initial WAN-down alerting path was validated, the monitoring model was extended to include a second fleet-level primary operational signal:
+
+- `FleetMissingHeartbeatCount`
+
+This signal is published by a scheduled heartbeat-check Lambda that evaluates stale `last_seen` values from the DynamoDB telemetry history table.
+
+With this addition, the primary fleet-level monitoring model now covers both:
+
+- aggregate WAN-down conditions
+- aggregate missing-heartbeat or stale-telemetry conditions

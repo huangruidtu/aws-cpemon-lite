@@ -14,14 +14,20 @@ The goal of this project is to simulate a simple but realistic telemetry path fr
 
 The architecture is centered around a lightweight AWS-native telemetry pipeline.
 
-A simulator sends telemetry payloads to API Gateway over HTTPS. API Gateway forwards requests to an ingest Lambda, which acts as the main entry point for telemetry processing. From there, the flow is logically split into multiple downstream responsibilities to keep the design easier to understand:
+A simulator sends telemetry payloads to API Gateway over HTTPS. API Gateway forwards requests to the ingestion Lambda, which acts as the main entry point for telemetry processing.
 
-* Archive Lambda stores raw telemetry in S3
-* State Update Lambda updates the latest device state in DynamoDB
-* Metrics Lambda publishes custom telemetry and health metrics to CloudWatch Metrics
-* The ingest path also writes processing logs to CloudWatch Logs
+The ingestion Lambda performs the following responsibilities directly:
 
-CloudWatch Metrics feeds both CloudWatch Dashboard and CloudWatch Alarms. The dashboard provides a lightweight operational view of telemetry volume, Lambda health, and device-related signals. CloudWatch Alarms trigger SNS notifications when abnormal conditions are detected.
+* validates telemetry payloads
+* derives a lightweight health state
+* stores raw telemetry in S3
+* stores structured telemetry records in DynamoDB
+* publishes CloudWatch custom metrics
+* writes processing logs to CloudWatch Logs
+
+In addition to the ingestion path, the architecture includes a scheduled heartbeat-check Lambda. This Lambda periodically scans the DynamoDB telemetry history table, derives the most recent `last_seen` value per device, counts stale devices, and publishes the fleet-level metric `FleetMissingHeartbeatCount`.
+
+CloudWatch Metrics feeds both CloudWatch Dashboard and CloudWatch Alarms. The dashboard provides a lightweight operational view of fleet-level signals and supporting device-level signals. CloudWatch Alarms trigger SNS notifications when abnormal conditions are detected.
 
 In addition to the core telemetry path, the platform also includes supporting platform capabilities such as IAM, Systems Manager Parameter Store, CloudTrail, Cost Explorer, and AWS Budgets. These components are not part of the direct telemetry path, but they support access control, configuration handling, auditability, and cost visibility.
 
@@ -35,15 +41,21 @@ The main telemetry path is:
 
 The processing path then continues as:
 
-* **Ingest Lambda → Archive Lambda → S3 Raw Telemetry Archive**
-* **Ingest Lambda → State Update Lambda → DynamoDB Latest Device State**
-* **Ingest Lambda → Metrics Lambda → CloudWatch Metrics**
+* **Ingest Lambda → S3 Raw Telemetry Archive**
+* **Ingest Lambda → DynamoDB Telemetry History**
+* **Ingest Lambda → CloudWatch Metrics**
 * **Ingest Lambda → CloudWatch Logs**
+* **Scheduled heartbeat-check Lambda → CloudWatch Metrics**
 
 The observability and alerting path is:
 
 **CloudWatch Metrics → CloudWatch Dashboard**
 **CloudWatch Metrics → CloudWatch Alarms → SNS Notifications**
+
+The primary fleet-level operational signals are:
+
+* `FleetWanDownCount`
+* `FleetMissingHeartbeatCount`
 
 ## Supporting Platform Capabilities
 

@@ -41,8 +41,9 @@ After receiving telemetry, Lambda performs the following actions:
 * stores raw telemetry in S3
 * stores structured telemetry records in DynamoDB for recent history and operational lookup
 
-The detection and notification path is:
+The detection, heartbeat-check, and notification path is:
 
+**DynamoDB telemetry history → Scheduled heartbeat-check Lambda → CloudWatch Metrics**
 **CloudWatch Metrics → CloudWatch Alarms → SNS**
 
 Supporting platform capabilities include:
@@ -113,6 +114,14 @@ A simulated device sends telemetry payloads to API Gateway. Lambda processes the
 4. archives raw telemetry in S3
 5. stores structured telemetry records in DynamoDB
 
+In addition to the ingestion path, the MVP also includes a scheduled heartbeat-check path.
+
+A dedicated heartbeat-check Lambda periodically scans the DynamoDB telemetry history table, derives the latest `last_seen` value per device, counts stale devices, and publishes:
+
+- `FleetMissingHeartbeatCount`
+
+This provides a second fleet-level operational signal alongside WAN-down aggregation.
+
 The telemetry handling model is intentionally divided into three paths:
 
 * **Hot path**: Lambda validates incoming payloads, derives a lightweight health state, and publishes CloudWatch custom metrics.
@@ -143,6 +152,11 @@ Example telemetry payload:
 
 Current custom metrics include:
 
+### Fleet-level primary operational signals
+* `FleetWanDownCount`
+* `FleetMissingHeartbeatCount`
+
+### Per-device supporting signals
 * `DeviceTelemetryReceived`
 * `WanDown`
 * `CpuUsage`
@@ -199,8 +213,10 @@ with a confirmed email subscription for alert delivery.
 This project prioritizes **service availability monitoring** over pure device liveness.  
 That means:
 
-- fleet-level WAN-down aggregation is the primary alerting signal
+- `FleetWanDownCount` is a primary service-availability signal
+- `FleetMissingHeartbeatCount` is a primary missing-heartbeat signal
 - DynamoDB-backed telemetry remains the main path for per-device drill-down and operational investigation
+- per-device metrics remain supporting signals rather than primary alerting signals
 
 ## Security baseline
 
@@ -231,10 +247,9 @@ This helps reinforce that cloud architecture should not only work technically, b
 ## Project structure
 
 ```text
-docs/       Documentation, architecture notes, security notes, cost visibility
-infra/      Infrastructure as code
-simulator/  Python-based device simulator
-src/        Backend or helper code
+docs/                     Documentation, architecture notes, IAM notes, security notes, cost visibility
+infra/src/lambda/         Lambda source code units
+simulator/                Python-based device simulator
 ```
 
 ## Documentation

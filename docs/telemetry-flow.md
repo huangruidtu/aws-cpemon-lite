@@ -12,13 +12,18 @@ The main telemetry path is:
 
 **Simulator → API Gateway → Lambda**
 
-After receiving telemetry, Lambda performs the following actions:
+After receiving telemetry, the ingestion Lambda performs the following actions:
 
 1. Validates the incoming payload
 2. Writes processing logs to CloudWatch Logs
-3. Publishes custom health and telemetry metrics to CloudWatch Metrics
-4. Stores the raw telemetry payload in S3
-5. Updates the latest device state in DynamoDB
+3. Derives a lightweight health state
+4. Publishes custom telemetry and health metrics to CloudWatch Metrics
+5. Stores the raw telemetry payload in S3
+6. Stores structured telemetry records in DynamoDB
+
+In addition to the ingestion path, a scheduled heartbeat-check Lambda scans the DynamoDB telemetry history table, derives the latest `last_seen` value per device, counts stale devices, and publishes the fleet-level metric:
+
+- `FleetMissingHeartbeatCount`
 
 The detection and notification path is:
 
@@ -31,12 +36,11 @@ A simulated device sends a payload similar to the following:
 ```json
 {
   "device_id": "cpe-001",
-  "timestamp": "2026-03-26T10:00:00Z",
+  "last_seen": "2026-03-26T10:00:00Z",
   "cpu_usage": 82,
   "memory_usage": 68,
   "temperature": 71,
-  "wan_status": "up",
-  "packet_loss": 0.5
+  "wan_status": "up"
 }
 ```
 
@@ -71,12 +75,23 @@ This approach keeps the logging model simple while making CloudWatch Logs the fi
 
 ### Metrics
 
-It publishes custom metrics such as:
+The ingestion Lambda publishes per-device supporting metrics such as:
 
-* `TelemetryReceivedCount`
-* `HighCpuDeviceCount`
-* `WanDownDeviceCount`
-* `HighTemperatureDeviceCount`
+* `DeviceTelemetryReceived`
+* `WanDown`
+* `CpuUsage`
+* `MemoryUsage`
+* `Temperature`
+* `HealthWarning`
+* `HealthCritical`
+
+It also publishes the fleet-level aggregate metric:
+
+* `FleetWanDownCount`
+
+The heartbeat-check Lambda publishes the second fleet-level primary metric:
+
+* `FleetMissingHeartbeatCount`
 
 ### Raw archive
 
@@ -88,9 +103,9 @@ Example S3 layout:
 s3://aws-cpemon-lite-raw/device_id=cpe-001/date=2026-03-26/telemetry-001.json
 ```
 
-### Latest state update
+### Structured telemetry persistence
 
-It updates the most recent known device state in DynamoDB.
+Structured telemetry records are written to DynamoDB for operational lookup and recent history queries.
 
 Example logical item shape:
 
@@ -102,7 +117,8 @@ Example logical item shape:
   "memory_usage": 68,
   "temperature": 71,
   "wan_status": "up",
-  "health_state": "warning"
+  "health_state": "warning",
+  "ingested_at": "2026-03-26T10:00:05Z"
 }
 ```
 
@@ -117,14 +133,14 @@ This makes the MVP more realistic than using a single backend for both use cases
 
 ## Detection and alerting
 
-CloudWatch Alarms evaluate custom metrics and trigger SNS notifications when thresholds are crossed.
+CloudWatch Alarms evaluate fleet-level custom metrics and trigger SNS notifications when thresholds are crossed.
 
-Example detection ideas:
+The two primary operational signals are:
 
-* No telemetry received for a defined period
-* WAN down signal detected
-* High CPU count above threshold
-* Lambda error count increased unexpectedly
+* `FleetWanDownCount`
+* `FleetMissingHeartbeatCount`
+
+Supporting per-device metrics remain available for drill-down and investigation rather than primary alerting.
 
 ## Operational visibility
 

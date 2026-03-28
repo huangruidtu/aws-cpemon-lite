@@ -65,7 +65,35 @@ SNS is easy to integrate with CloudWatch Alarms and is enough for basic email-ba
 ### Trade-off
 This does not include advanced routing, deduplication, suppression, or incident workflow management.
 
-## 6. Security should be explicit but low-cost
+## 6. Use two fleet-level primary operational signals
+
+### Decision
+Use `FleetWanDownCount` and `FleetMissingHeartbeatCount` as the primary fleet-level operational signals for the MVP.
+
+### Reasoning
+Broadband and telecom-style monitoring is more concerned with broad service impact and missing telemetry across a population of devices than with isolated single-device symptoms.
+
+`FleetWanDownCount` reflects aggregate WAN-down conditions across the fleet.
+
+`FleetMissingHeartbeatCount` reflects devices whose latest `last_seen` value has become stale, which helps detect missing telemetry or heartbeat failure even when devices do not explicitly report WAN-down.
+
+### Trade-off
+This keeps the primary operational model simple and focused, but it does not yet include more advanced fleet-level aggregate signals such as fleet health-warning aggregation or richer device-presence state models.
+
+## 7. Implement missing-heartbeat detection by scheduled polling in the MVP
+
+### Decision
+For the MVP, implement missing-heartbeat detection by using a scheduled Lambda that scans the DynamoDB telemetry history table and evaluates stale `last_seen` values.
+
+### Reasoning
+This approach is simple, practical, and easy to explain for a small-scale MVP. It avoids introducing a separate device-status table, a dedicated heartbeat field, or a more complex event-driven device-presence architecture in the first version.
+
+### Trade-off
+This is an MVP trade-off rather than a large-scale target design. At larger scale, the architecture would likely evolve toward event-driven device presence or lifecycle handling instead of table polling.
+
+A separate heartbeat field is also intentionally not added in the MVP, because `last_seen` already serves that purpose.
+
+## 8. Security should be explicit but low-cost
 The MVP includes practical security controls without turning the project into a full security platform.
 
 ### Decision
@@ -77,7 +105,7 @@ These controls add strong engineering value at relatively low implementation cos
 ### Trade-off
 The design does not yet include WAF tuning, Cognito, mTLS, GuardDuty, Security Hub, or enterprise-grade compliance controls.
 
-## 7. Cost awareness should be visible
+## 9. Cost awareness should be visible
 Cost-aware design is treated as an explicit part of the architecture rather than a hidden assumption.
 
 ### Decision
@@ -89,7 +117,7 @@ This helps reinforce the project’s cloud cost awareness without adding custom 
 ### Trade-off
 The MVP does not include advanced FinOps automation, tagging governance, or automated shutdown controls.
 
-## 8. Keep future evolution open, but do not build it now
+## 10. Keep future evolution open, but do not build it now
 The architecture should be extensible, but the MVP should stay focused.
 
 ### Decision
